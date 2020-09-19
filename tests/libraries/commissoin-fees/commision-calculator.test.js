@@ -1,66 +1,117 @@
-import CommissionCalculator from "../src/libraries/commission-fees/Calculator"
+import {
+  CashIn,
+  CashOut,
+} from "../../../src/libraries/commission-fees/Calculator"
 
 describe("Commision Calculator", () => {
-  test("calculate cash-in commision", () => {
-    const inputData = {
-      date: "2016-01-05", // operation date in format `Y-m-d`
-      user_id: 1, // user id, integer
-      user_type: "natural", // user type, one of “natural”(natural person) or “juridical”(legal person)
-      type: "cash_in", // operation type, one of “cash_in” or “cash_out”
+  describe("Cash-in", () => {
+    let inputData = {
+      date: "2016-01-05",
+      user_id: 1,
+      user_type: "natural",
+      type: "cash_in",
       operation: {
-        amount: 200, // operation amount(for example `2.12` or `3`)
-        currency: "EUR", // operation currency `EUR`
+        amount: 200,
+        currency: "EUR",
       },
     }
 
-    expect(
-      CommissionCalculator.setConfig({
-        percents: 0.03,
-        max: {
-          amount: 5,
-          currency: "EUR",
-        },
-      }).cashIn(inputData)
-    ).toBe(0.06)
-  })
-
-  test("calculate cash-out commision natural", () => {
-    const inputData = {
-      date: "2016-01-06",
-      user_id: 1,
-      user_type: "natural",
-      type: "cash_out",
-      operation: { amount: 30000, currency: "EUR" },
+    const config = {
+      percents: 0.03,
+      max: {
+        amount: 5,
+        currency: "EUR",
+      },
     }
 
-    expect(
-      CommissionCalculator.setConfig({
-        percents: 0.3,
-        week_limit: {
-          amount: 1000,
+    test("calculate commision", () => {
+      const Commission = new CashIn(config)
+
+      expect(Commission.getCommission(inputData)).toBe(0.06)
+    })
+
+    test("should return maximum if commission exceeds it", () => {
+      const nInputData = {
+        ...inputData,
+        operation: {
+          amount: 2000000,
           currency: "EUR",
         },
-      }).cashOut(inputData)
-    ).toBe(0.06)
+      }
+      const Commission = new CashIn(config)
+      expect(Commission.getCommission(nInputData)).toBe(config.max.amount)
+    })
   })
 
-  test("calculate cash-out commision juridical", () => {
-    const inputData = {
-      date: "2016-01-06",
-      user_id: 2,
-      user_type: "juridical",
-      type: "cash_out",
-      operation: { amount: 300.0, currency: "EUR" },
-    }
+  describe("Cash-out", () => {
+    describe("natural", () => {
+      let inputData = {
+        date: "2016-01-06",
+        user_id: 2,
+        user_type: "juridical",
+        type: "cash_out",
+        operation: { amount: 300.0, currency: "EUR" },
+      }
 
-    expect(
-      CommissionCalculator.setConfig({
+      const config = {
         percents: 0.3,
         min: {
           amount: 0.5,
           currency: "EUR",
         },
-      }).cashOut(inputData)
-    ).toBe(0.9)
+      }
+
+      test("calculate commission", () => {
+        const Commission = new CashOut(config)
+        expect(Commission.getCommission(inputData)).toBe(0.9)
+      })
+
+      test("should return 0 if below weekly limit", () => {
+        const nInputData = {
+          date: "2016-01-10",
+          user_id: 3,
+          user_type: "natural",
+          type: "cash_out",
+          operation: { amount: 1000.0, currency: "EUR" },
+        }
+        const Commission = new CashOut(config)
+        expect(Commission.getCommission(nInputData)).toBe(0)
+      })
+    })
+
+    describe("juridical", () => {
+      let inputData = {
+        date: "2016-01-06",
+        user_id: 2,
+        user_type: "juridical",
+        type: "cash_out",
+        operation: { amount: 300.0, currency: "EUR" },
+      }
+
+      const config = {
+        percents: 0.3,
+        min: {
+          amount: 0.5,
+          currency: "EUR",
+        },
+      }
+
+      test("calculate commission", () => {
+        const Commission = new CashOut(config)
+        expect(Commission.getCommission(inputData)).toBe(0.9)
+      })
+
+      test("should return minimum if commission is below it", () => {
+        const nInputData = {
+          ...inputData,
+          operation: {
+            amount: 50.0,
+            currency: "EUR",
+          },
+        }
+        const Commission = new CashOut(config)
+        expect(Commission.getCommission(nInputData)).toBe(config.min.amount)
+      })
+    })
   })
 })
