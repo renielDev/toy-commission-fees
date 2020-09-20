@@ -4,18 +4,36 @@ import {
   getWeeklyTotalByUser,
 } from "../../../src/libraries/commission-fees/Calculator"
 const mockTransactions = require("./mock-transactions.json")
+const cashInConfig = {
+  percents: 0.03,
+  max: {
+    amount: 5,
+    currency: "EUR",
+  },
+}
+const cashOutConfig = {
+  percents: 0.3,
+  min: {
+    amount: 0.5,
+    currency: "EUR",
+  },
+  week_limit: {
+    amount: 1000,
+    currency: "EUR",
+  },
+}
 
 describe("Commision Calculator", () => {
   test("Get weekly total", () => {
     const weeklyTotal = getWeeklyTotalByUser(mockTransactions)
 
     expect(weeklyTotal).toEqual({
-      "1-2016-2": 31300,
-      "1-2016-3": 100,
-      "1-2016-8": 300,
-      "2-2016-2": 300,
-      "2-2016-3": 1000000,
-      "3-2016-3": 1000,
+      "1-2016-2-cash_in": 200,
+      "1-2016-2-cash_out": 31200,
+      "1-2016-8-cash_out": 300,
+      "2-2016-2-cash_in": 1000000,
+      "2-2016-2-cash_out": 300,
+      "3-2016-2-cash_out": 1000,
     })
   })
 
@@ -31,16 +49,8 @@ describe("Commision Calculator", () => {
       },
     }
 
-    const config = {
-      percents: 0.03,
-      max: {
-        amount: 5,
-        currency: "EUR",
-      },
-    }
-
     test("calculate commision", () => {
-      const Commission = new CashIn(config)
+      const Commission = new CashIn(cashInConfig)
 
       expect(Commission.getCommission(inputData)).toBe(0.06)
     })
@@ -53,8 +63,8 @@ describe("Commision Calculator", () => {
           currency: "EUR",
         },
       }
-      const Commission = new CashIn(config)
-      expect(Commission.getCommission(nInputData)).toBe(config.max.amount)
+      const Commission = new CashIn(cashInConfig)
+      expect(Commission.getCommission(nInputData)).toBe(cashInConfig.max.amount)
     })
   })
 
@@ -68,16 +78,8 @@ describe("Commision Calculator", () => {
         operation: { amount: 30000, currency: "EUR" },
       }
 
-      const config = {
-        percents: 0.3,
-        week_limit: {
-          amount: 1000,
-          currency: "EUR",
-        },
-      }
-
       test("calculate commission", () => {
-        const Commission = new CashOut(config, mockTransactions)
+        const Commission = new CashOut(cashOutConfig, mockTransactions)
         expect(Commission.getCommission(inputData)).toBe(87)
       })
 
@@ -89,7 +91,7 @@ describe("Commision Calculator", () => {
           type: "cash_out",
           operation: { amount: 1000.0, currency: "EUR" },
         }
-        const Commission = new CashOut(config, mockTransactions)
+        const Commission = new CashOut(cashOutConfig, mockTransactions)
         expect(Commission.getCommission(nInputData)).toBe(0)
       })
     })
@@ -103,16 +105,8 @@ describe("Commision Calculator", () => {
         operation: { amount: 300.0, currency: "EUR" },
       }
 
-      const config = {
-        percents: 0.3,
-        min: {
-          amount: 0.5,
-          currency: "EUR",
-        },
-      }
-
       test("calculate commission", () => {
-        const Commission = new CashOut(config, mockTransactions)
+        const Commission = new CashOut(cashOutConfig, mockTransactions)
         expect(Commission.getCommission(inputData)).toBe(0.9)
       })
 
@@ -124,9 +118,28 @@ describe("Commision Calculator", () => {
             currency: "EUR",
           },
         }
-        const Commission = new CashOut(config, mockTransactions)
-        expect(Commission.getCommission(nInputData)).toBe(config.min.amount)
+        const Commission = new CashOut(cashOutConfig, mockTransactions)
+        expect(Commission.getCommission(nInputData)).toBe(
+          cashOutConfig.min.amount
+        )
       })
     })
+  })
+
+  test("Should return commissions of transactions", () => {
+    const transactions = mockTransactions
+    const result = [0.06, 0.9, 87.0, 3.0, 0.3, 0.3, 5.0, 0.0, 0.0]
+
+    const CashInCommission = new CashIn(cashInConfig)
+    const CashOutCommission = new CashOut(cashOutConfig, transactions)
+
+    const commissions = transactions.map((transaction) => {
+      if (transaction.type === "cash_in")
+        return CashInCommission.getCommission(transaction)
+
+      return CashOutCommission.getCommission(transaction)
+    })
+
+    expect(commissions).toEqual(result)
   })
 })
