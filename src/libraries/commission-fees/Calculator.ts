@@ -4,31 +4,78 @@ import {
   ConfigCashIn,
 } from "../../types/transaction"
 import compose from "compose-function"
+import moment from "moment"
 
 type TransactionReturn = {
   getCommission(data: Transaction): number
 }
 
-const toPercent = (number: number): number => number / 100
-const computeCommission = (amount: number, percentage: number): number =>
+/**
+ * Convert decimal to percentage
+ *
+ * @param number
+ * @return {number}
+ */
+export const toPercent = (number: number): number => number / 100
+
+export const computeCommission = (amount: number, percentage: number): number =>
   amount * toPercent(percentage)
 
-const withMaximum = (max: number, amount: number): number =>
+export const withMaximum = (max: number, amount: number): number =>
   amount > max ? max : amount
 
-const withMinimum = (min: number, amount: number): number =>
+export const withMinimum = (min: number, amount: number): number =>
   amount < min ? min : amount
 
-// const withWeeklyLimit = (
-//   limitInWeek: number,
-//   allData: Transaction[],
-//   data: Transaction,
-//   amount: number
-// ): number => {
-//   const totalInWeek = > limitInWeek ? amount : 0
+export const getWeeklyKey = (data: Transaction): string => {
+  const date = moment(data.date)
+  const year = date.year()
+  const week = date.week()
+  return `${data.user_id}-${year}-${week}`
+}
 
-//   return 0
-// }
+export const getWeeklyTotalByUser = (data: Transaction[]): object => {
+  const weeklyTotal = data.reduce((acc, curr) => {
+    const key = getWeeklyKey(curr)
+
+    if (acc.hasOwnProperty(key)) {
+      acc[key] += curr.operation.amount
+
+      return acc
+    }
+
+    return {
+      ...acc,
+      [key]: curr.operation.amount,
+    }
+  }, {})
+  return weeklyTotal
+}
+
+const withWeeklyLimit = (
+  limitInWeek: number,
+  weeklyTotal: object,
+  data: Transaction,
+  commission: number
+): number => {
+  const key = getWeeklyKey(data)
+
+  if (weeklyTotal.hasOwnProperty(key)) {
+    // check if weekly limit hasn't been exceeded
+    return weeklyTotal[key] <= limitInWeek ? 0 : commission
+  }
+
+  return commission
+}
+
+const withLessWeeklyLimit = (
+  commission: number,
+  limit: number,
+  percentage: number
+): number => {
+  const totalCommssion = commission - computeCommission(limit, percentage)
+  return totalCommssion > 0 ? totalCommssion : 0
+}
 
 export function CashIn(config: ConfigCashIn): TransactionReturn {
   return {
@@ -43,11 +90,20 @@ export function CashIn(config: ConfigCashIn): TransactionReturn {
   }
 }
 
-export function CashOut(config: ConfigCashOut): TransactionReturn {
+export function CashOut(
+  config: ConfigCashOut,
+  transactions: Transaction[]
+): TransactionReturn {
+  const weeklyTotal = getWeeklyTotalByUser(transactions)
+
   const computeNatural = (data: Transaction): number => {
     const limit = config.week_limit.amount
-    const enhanced = compose(() =>
-      computeCommission(data.operation.amount, config.percents)
+    const enhanced = compose(
+      (commission: number) =>
+        withWeeklyLimit(limit, weeklyTotal, data, commission),
+      (commission: number) =>
+        withLessWeeklyLimit(commission, limit, config.percents),
+      () => computeCommission(data.operation.amount, config.percents)
     )
     return enhanced()
   }

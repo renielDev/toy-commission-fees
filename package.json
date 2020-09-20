@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "axios": "^0.20.0",
-    "compose-function": "^3.0.3"
+    "compose-function": "^3.0.3",
+    "moment": "^2.28.0"
   }
 }
