@@ -15,4 +15,4 @@
 ## Running test cases
 
 1.  On the root directory of the project, run `npm run test`
-2.  It should pass all the test cases for the necessary for the App's Requirements.
+2.  It should pass all the test cases necessary for the App's Requirements.
