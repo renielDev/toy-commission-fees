@@ -9,7 +9,7 @@
 
 ## Checking that the app runs as expected
 
-1. On the root directory of the project, run `npm run start`
+1. On the root directory of the project, run `npm run app`
 2. It should print the calculated commissions on the terminal.
 
 ## Running test cases
