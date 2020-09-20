@@ -1,8 +1,9 @@
 import {
   CashIn,
   CashOut,
-  getWeeklyTotalByUser,
 } from "../../../src/libraries/commission-fees/Calculator"
+import { getWeeklyTotalByUser } from "../../../src/libraries/commission-fees/helpers/commission"
+
 const mockTransactions = require("./mock-transactions.json")
 const cashInConfig = {
   percents: 0.03,
