@@ -118,26 +118,6 @@ const withWeeklyLimit = (
   return 0
 }
 
-/**
- * Less limit from the total commission
- * by calculating the limit and deducting from the
- * total calculated commission
- *
- * @param commission
- * @param limit
- * @param percentage
- *
- * @return {number}
- */
-const withLessWeeklyLimit = (
-  commission: number,
-  limit: number,
-  percentage: number
-): number => {
-  const totalCommssion = commission - computeCommission(limit, percentage)
-  return totalCommssion > 0 ? totalCommssion : 0
-}
-
 export function CashIn(config: ConfigCashIn): TransactionReturn {
   return {
     getCommission: (data: Transaction) => {
