@@ -12,5 +12,5 @@ test("read json file", () => {
     },
   }
 
-  expect(file.readContents("src/mock-data/input.json")).toEqual(expected)
+  expect(file.readContents("src/mock-data/transaction.json")).toEqual(expected)
 })

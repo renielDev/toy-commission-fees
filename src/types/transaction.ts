@@ -3,7 +3,7 @@ export type TransactionType = "cash_in" | "cash_out"
 export type UserType = "natural" | "juridical"
 export type AmountSchema = {
   amount: number
-  currency: Currency
+  currency: string
 }
 
 export interface BaseConfig {
