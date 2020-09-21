@@ -25,19 +25,6 @@ const cashOutConfig = {
 }
 
 describe("Commision Calculator", () => {
-  test("Get weekly total", () => {
-    const weeklyTotal = getWeeklyTotalByUser(mockTransactions)
-
-    expect(weeklyTotal).toEqual({
-      "1-2016-2-cash_in": 200,
-      "1-2016-2-cash_out": 31200,
-      "1-2016-8-cash_out": 300,
-      "2-2016-2-cash_in": 1000000,
-      "2-2016-2-cash_out": 300,
-      "3-2016-2-cash_out": 1000,
-    })
-  })
-
   describe("Cash-in", () => {
     let inputData = {
       date: "2016-01-05",
